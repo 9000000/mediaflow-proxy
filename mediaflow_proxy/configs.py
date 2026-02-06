@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     mpd_live_init_cache_ttl: int = 60  # TTL (seconds) for live init segment cache; 0 disables caching.
     mpd_live_playlist_depth: int = 8  # Number of recent segments to expose per live playlist variant.
 
+    # FlareSolverr settings (for Cloudflare bypass)
+    flaresolverr_url: str | None = None  # FlareSolverr service URL. Example: http://localhost:8191
+    flaresolverr_timeout: int = 60  # Timeout (seconds) for FlareSolverr requests.
+
     # Acestream settings
     enable_acestream: bool = False  # Whether to enable Acestream proxy support.
     acestream_host: str = "localhost"  # Acestream engine host.
@@ -77,6 +81,12 @@ class Settings(BaseSettings):
     acestream_keepalive_interval: int = 15  # Interval (seconds) for session keepalive polling.
 
     user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"  # The user agent to use for HTTP requests.
+
+    # Upstream error resilience settings
+    upstream_retry_on_disconnect: bool = True  # Enable/disable retry when upstream disconnects mid-stream.
+    upstream_retry_attempts: int = 2  # Number of retry attempts when upstream disconnects during streaming.
+    upstream_retry_delay: float = 1.0  # Delay (seconds) between retry attempts.
+    graceful_stream_end: bool = True  # Return valid empty playlist instead of error when upstream fails.
 
     class Config:
         env_file = ".env"

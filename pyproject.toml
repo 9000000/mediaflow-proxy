@@ -34,6 +34,9 @@ dependencies = [
     "lxml",
     "psutil",
     "curl_cffi",
+    "telethon>=1.42.0",
+    "cryptg>=0.4.0",
+    "redis[hiredis]>=5.0.0",
 ]
 
 [project.urls]

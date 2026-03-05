@@ -12,6 +12,7 @@ import asyncio
 import logging
 import re
 import secrets
+from urllib.parse import quote
 from functools import lru_cache
 from typing import Annotated, Optional, TYPE_CHECKING
 
@@ -55,6 +56,30 @@ def _load_transcode_handlers():
         handle_transcode_hls_playlist,
         handle_transcode_hls_segment,
     )
+
+
+def _content_disposition_inline(filename: str) -> str:
+    """
+    Build a Content-Disposition header value that is always latin-1 safe.
+
+    Starlette/FastAPI requires header values to be latin-1 encodable. Telegram filenames
+    may contain unicode (e.g. Cyrillic), so we use RFC 6266 `filename*` when needed.
+    """
+    # Sanitize newlines and carriage returns
+    sanitized = (filename or "").strip().replace("\n", " ").replace("\r", " ")
+    if not sanitized:
+        return "inline"
+
+    try:
+        # Try if the filename is latin-1 encodable
+        sanitized.encode("latin-1")
+        # For the filename= parameter, we must escape backslashes and double quotes
+        escaped = sanitized.replace('\\', '\\\\').replace('"', '\\"')
+        return f'inline; filename="{escaped}"'
+    except UnicodeEncodeError:
+        # For filename*, use percent-encoding with the original (unescaped) sanitized name
+        encoded = quote(sanitized, encoding="utf-8", safe="")
+        return f"inline; filename*=UTF-8''{encoded}"
 
 
 def get_content_type(mime_type: str, file_name: Optional[str] = None) -> str:
@@ -249,7 +274,7 @@ async def telegram_stream(
                 "access-control-allow-origin": "*",
             }
             if media_filename:
-                headers["content-disposition"] = f'inline; filename="{media_filename}"'
+                headers["content-disposition"] = _content_disposition_inline(media_filename)
             return Response(headers=headers)
 
         # Build response headers
@@ -267,7 +292,7 @@ async def telegram_stream(
             base_headers["content-range"] = f"bytes {start}-{end}/{actual_file_size}"
 
         if media_filename:
-            base_headers["content-disposition"] = f'inline; filename="{media_filename}"'
+            base_headers["content-disposition"] = _content_disposition_inline(media_filename)
 
         response_headers = apply_header_manipulation(base_headers, proxy_headers)
 

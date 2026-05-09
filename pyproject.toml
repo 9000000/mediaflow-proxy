@@ -37,6 +37,7 @@ dependencies = [
     "cryptg>=0.4.0",
     "redis[hiredis]>=5.0.0",
     "av>=14.0.0",
+    "cryptography>=48.0.0",
 ]
 
 [project.urls]
